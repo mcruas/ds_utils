@@ -12,6 +12,7 @@ build/
 develop-eggs/
 dist/
 downloads/
+.vscode/
 eggs/
 .eggs/
 lib/
@@ -127,6 +128,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
 
 # Spyder project settings
 .spyderproject

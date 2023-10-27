@@ -1,11 +1,38 @@
 import pandas as pd
 import numpy as np
 import string
-from misc import list_difference, list_intersection
+from ds_utils.misc import list_difference, list_intersection
+import openpyxl
 
+def create_timeseries_eda(df, TIME_VARIABLES, cols_eda=None, lags=False, cuts:dict=False):
+    """
+    Creates a dataframe for EDA with specified time variables, columns, lags, and cuts.
 
-def create_df_eda(df, TIME_VARIABLES, cols_eda=None, lags=False, cuts:dict=False):
+    Parameters:
+    -----------
+    time_variables : list
+        A list of time variables. Currently, only 'month' is supported.
+    
+    cols_eda : list, optional
+        A list of the variables to be used in the EDA. 
+        If None, all variables except 'cpf_cnpj' and 'month' are used.
+    
+    lags : list or bool, optional
+        A list of the lags to be created. If False, no lags are created.
+    
+    cuts : dict, optional
+        A dictionary with variables to be cut, number of cuts, and the number 
+        of decimal places to round the cuts to.
+        Example: 
+            cuts = {'var1': (5,0), 'var2': (10,2)} 
+            This will create 5 cuts for 'var1' and 10 cuts for 'var2', 
+            rounded to 0 and 2 decimal places, respectively.
 
+    Returns:
+    --------
+    DataFrame
+        A dataframe formatted for EDA.
+    """
     def create_cuts(df, cuts, cols_eda, lags=None):
     # creates cuts for continuous variables which are on the cuts dictionary
         for col, n_cuts, round_to in cuts:
@@ -38,13 +65,43 @@ def create_df_eda(df, TIME_VARIABLES, cols_eda=None, lags=False, cuts:dict=False
 
 def create_lags(df, time : str, lags = 1, id : str ='cpf_cnpj',  vars=None,
     drop_max_lags=True, fillna:bool=True) -> pd.DataFrame: 
-# Creates lags of a variables given in vars. Returns the same dataframe with the new variables.
-# time is the column with the time variable (for now, only month is supported)
-# lags is the list of lags to create. A single 
-# If drop_max_lags is True, dates which are before 
-#   add_month(min(date)+ max(lags)) are dropped .
-# If fillna is True, the lags will be filled with the 0 values.
+    """
+    Creates lags of variables provided in 'vars' and returns the same dataframe with the new variables.
 
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        The input dataframe.
+    
+    time : str
+        Column with the time variable. Currently, only 'month' is supported.
+    
+    lags : int or list, default=1
+        List of lags to create or a single integer indicating a single lag.
+    
+    id : str, default='cpf_cnpj'
+        Column name representing an ID.
+    
+    vars : list, optional
+        Variables for which lags will be created. If not provided, lags will be created for all columns except 'time' and 'id'.
+    
+    drop_max_lags : bool, default=True
+        If True, drops dates which are before add_month(min(date) + max(lags)).
+    
+    fillna : bool, default=True
+        If True, fills the lag columns with 0 where values are NaN.
+
+    Returns:
+    --------
+    pd.DataFrame
+        A dataframe with the newly created lag columns.
+
+    Raises:
+    -------
+    ValueError
+        If 'lags' is neither an int nor a list.
+    """
+   
     def add_month(date, n):
         return (pd.to_datetime(date) + pd.DateOffset(months=n))
 
@@ -278,3 +335,13 @@ def value_counts_others(s:pd.Series, min_rank:int=5, others_label:str='Others', 
         others_count = new_value_counts.pop(others_label)
         new_value_counts = new_value_counts.append(pd.Series(others_count, index=[others_label]))
     return new_value_counts
+
+
+def worksheet_to_pandas(worksheet):
+    # Convert the worksheet to a Pandas DataFrame, including column names
+    # worksheet is an openpyxl worksheet object
+    df = pd.DataFrame(worksheet.values)
+    df.columns = df.iloc[0]
+    df = df[1:]
+    df = df.dropna(how='all')
+    return df

@@ -1,3 +1,5 @@
+
+#%%
 import functools
 from typing import Iterable
 import polars as pl
